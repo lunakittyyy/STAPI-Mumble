@@ -33,3 +33,6 @@ bin/
 run/*
 # Remove the following line to remove server.properties from your project.
 !server.properties
+/natives/.vs
+/natives/x64
+/natives/WindowsLib/x64
