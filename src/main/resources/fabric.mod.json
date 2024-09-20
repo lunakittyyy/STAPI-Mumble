@@ -1,42 +1,28 @@
 {
   "schemaVersion": 1,
-  "id": "examplemod",
+  "id": "stapimumble",
   "version": "${version}",
 
-  "name": "Example Mod",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "name": "STAPI-Mumble",
+  "description": "Positional voice chat in Beta",
   "authors": [
-    "Me!"
+    "lunakittyyy",
+    "zsawyer"
   ],
   "contact": {
-    "homepage": "https://glass-launcher.net/",
-    "sources": "https://github.com/calmilamsy/stationapi-example-mod"
+    "homepage": "https://github.com/lunakittyyy/STAPI-Mumble",
+    "sources": "https://sourceforge.net/p/modmumblelink/code/72/tree/"
   },
 
-  "license": "CC0-1.0",
-  "icon": "assets/examplemod/icon.png",
+  "license": "GNU-LGPL",
+  "icon": "assets/stapimumble/icon.png",
 
   "environment": "*",
   "entrypoints": {
     "stationapi:event_bus": [
-      "net.glasslauncher.example.events.init.AchievementListener",
-      "net.glasslauncher.example.events.init.BlockListener",
-      "net.glasslauncher.example.events.init.ItemListener",
-      "net.glasslauncher.example.events.init.PlayerHandlerListener",
-      "net.glasslauncher.example.events.init.RecipeListener"
-    ],
-    "stationapi:event_bus_client": [
-      "net.glasslauncher.example.events.init.KeyBindingListener",
-      "net.glasslauncher.example.events.init.TextureListener",
-      "net.glasslauncher.example.events.ingame.KeyPressedListener"
-    ],
-    "stationapi:event_bus_server": [
-      "net.glasslauncher.example.events.init.ServerInitListener"
+      "lunakittyyy.stapimumble.MumbleMod"
     ]
   },
-  "mixins": [
-    "examplemod.mixins.json"
-  ],
 
   "depends": {
     "minecraft": "1.0.0-beta.7.3"
