@@ -4,8 +4,8 @@
 rm -R build_linux64
 mkdir build_linux64
 
-g++  -o build_linux64/libmod_MumbleLink_x64.so -m64 -shared -fPIC \
-     -Wl,-soname,build_linux64/libmod_MumbleLink_x64.so  \
+g++  -o build_linux64/libmumble_x64.so -m64 -shared -fPIC \
+     -Wl,-soname,build_linux64/libmumble_x64.so  \
      -I/usr/lib/jvm/java-17-temurin/include/ \
      -I/usr/lib/jvm/java-17-temurin/include/linux \
      -lrt \
