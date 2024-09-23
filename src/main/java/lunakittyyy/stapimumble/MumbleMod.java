@@ -3,16 +3,16 @@ package lunakittyyy.stapimumble;
 import net.fabricmc.loader.api.FabricLoader;
 import net.mine_diver.unsafeevents.listener.EventListener;
 import net.minecraft.client.Minecraft;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.modificationstation.stationapi.api.client.event.network.ServerLoginSuccessEvent;
 import net.modificationstation.stationapi.api.entity.player.PlayerHandler;
 import net.modificationstation.stationapi.api.event.mod.InitEvent;
 import net.modificationstation.stationapi.api.event.tick.GameTickEvent;
 import net.modificationstation.stationapi.api.mod.entrypoint.Entrypoint;
 import net.modificationstation.stationapi.api.util.Null;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
+import org.apache.commons.lang3.SystemUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -24,12 +24,23 @@ public class MumbleMod implements PlayerHandler {
 
     private boolean mumbleInited = false;
     private static boolean libLoaded = false;
-    private static ArrayList<UnsatisfiedLinkError> errors = new ArrayList<UnsatisfiedLinkError>();
+    private static ArrayList<Exception> errors = new ArrayList<Exception>();
     private static final String libName = "mumble";
     private static final String modName = "STAPI-Mumble";
 
     @EventListener
+    private void joinEvent(ServerLoginSuccessEvent event) {
+        var game = (Minecraft)FabricLoader.getInstance().getGameInstance();
+        for (Exception exc : errors) {
+            game.inGameHud.addChatMessage("STAPI-Mumble: " + exc.getMessage());
+        }
+    }
+
+    @EventListener
     private void tickEvent(GameTickEvent.End event) {
+        var game = (Minecraft)FabricLoader.getInstance().getGameInstance();
+        if (game.world == null || !errors.isEmpty()) return;
+
         if (!mumbleInited) {
             if (!tryInitMumble()) {
                 return;
@@ -45,7 +56,6 @@ public class MumbleMod implements PlayerHandler {
 
         LOGGER.warn(dllFolder + libName + "_x64.dll");
         LOGGER.warn(dllFolder + "lib" + libName + "_x64.so");
-        LOGGER.warn(dllFolder + "lib" + libName + "_x64.dylib");
 
         tryInitMumble();
     }
@@ -55,26 +65,16 @@ public class MumbleMod implements PlayerHandler {
     static {
         String s = File.separator;
         String dllFolder = FabricLoader.getInstance().getGameDir().toString() + s + "mods" + s + "STAPI-Mumble" + s + "natives" + s;
-
-        attemptLoadLibrary(dllFolder + libName + "_x64.dll", true);
-
-        attemptLoadLibrary(dllFolder + "lib" + libName + "_x64.so", true);
-
-        attemptLoadLibrary(dllFolder + "lib" + libName + "_x64.dylib", true);
-
-        if (!libLoaded) {
-            UnsatisfiedLinkError err;
-            // if no errors were registered
-
-            if (errors.isEmpty()) {
-                // throw missing libraries error
-                err = new UnsatisfiedLinkError("Library files not found!");
-
+        try {
+            if (SystemUtils.IS_OS_WINDOWS) {
+                System.load(dllFolder + libName + "_x64.dll");
+            } else if (SystemUtils.IS_OS_LINUX) {
+                System.load(dllFolder + "lib" + libName + "_x64.so");
             } else {
-                // throw incompatibility error
-                err = new UnsatisfiedLinkError("Required library could not be loaded, available libraries are incompatible!");
-
+                errors.add(new UnsupportedOperationException("Unsupported operating system. Only Windows and Linux are supported"));
             }
+        } catch (UnsatisfiedLinkError err) {
+            errors.add(new Exception("Failed to load natives. Make sure you are using a 64-bit JVM"));
         }
     }
 
@@ -111,7 +111,11 @@ public class MumbleMod implements PlayerHandler {
             float fCameraTopY = 1;
             float fCameraTopZ = 0;
 
-            Vec3d camera = game.player.method_1320();
+            Vec3d camera;
+            try {
+                camera = game.player.method_1320();
+            } catch (Exception ex) { return; }
+
 
             if (camera == null) {
                 LOGGER.warn("Camera is null, not attempting to send anything to Mumble");
@@ -208,66 +212,5 @@ public class MumbleMod implements PlayerHandler {
                 + endStr;
 
         return context;
-    }
-
-    /**
-     * load the specified library from path
-     *
-     * @param lib library name
-     * @throws UnsatisfiedLinkError loading of a found library failed
-     */
-    private static void attemptLoadLibrary(String lib) {
-        attemptLoadLibrary(lib, false);
-
-
-    }
-
-    /**
-     * load library from either path or a file
-     *
-     * @param lib name of the library or path of the file
-     * @param file if true lib is expected to specify a file
-     * @throws UnsatisfiedLinkError loading of a found library failed
-     */
-    private static void attemptLoadLibrary(String lib, boolean file) {
-        // if the library was already loaded skip
-        if (!libLoaded) {
-
-            // try loading lib
-            try {
-                // if supplied lib is a file path
-                if (file) {
-                    // attempt to load library file
-                    System.load(lib);
-
-                } else {
-                    // attemt to load the library from jpath
-                    System.loadLibrary(lib);
-
-                }
-
-            } catch (UnsatisfiedLinkError err) {
-                //ModLoader.getLogger().fine("[DEBUG] " + err);
-
-                // check if the library was not found
-                if (err.getMessage().startsWith("no ")
-                        || err.getMessage().startsWith("Can't load library")) {
-
-                    // library was not loaded because it was not found
-                    return;
-
-                } else {
-                    // loading failed, throw error
-                    errors.add(err);
-
-                    return;
-                }
-            }
-
-            // mark success
-            libLoaded = true;
-
-            //ModLoader.getLogger().fine("[DEBUG] loaded: " + lib);
-        }
     }
 }
